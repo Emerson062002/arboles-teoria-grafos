@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101829">
+  <title>Algoritmo de Kruskal | Árboles en teoría de grafos</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="topline">
+        <a class="brand" href="/" aria-label="Inicio: Laboratorio de grafos">
+          <span class="topline-mark" aria-hidden="true">G</span>
+          <span>Laboratorio de grafos</span>
+        </a>
+        <span class="course-label">Matemáticas discretas <span aria-hidden="true">/</span> Teoría de grafos</span>
+      </div>
+      <div class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow hero-eyebrow"><span class="live-dot"></span> Explorador interactivo</span>
+          <h1>Conecta los puntos.<br><span>Encuentra el mínimo.</span></h1>
+          <p class="intro">Explora cómo Kruskal construye la red más económica, una conexión a la vez. Compara su resultado con Prim en tiempo real.</p>
+          <div class="hero-tags">
+            <span class="tag">Árbol generador mínimo</span>
+            <span class="tag tag-subtle">Sin ciclos · Peso mínimo</span>
+          </div>
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+          <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
+          <span class="orbit-node orbit-node-a">A</span><span class="orbit-node orbit-node-b">B</span>
+          <span class="orbit-node orbit-node-c">C</span><span class="orbit-core">∑</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="layout" aria-label="Visualización del algoritmo de Kruskal">
+      <article class="card">
+        <div class="card-heading">
+          <div><span class="eyebrow">Espacio de exploración</span><h2>Tu grafo en 3D</h2></div>
+          <span class="status" id="graph-count">5 vértices · 7 aristas</span>
+        </div>
+        <p class="graph-warning" id="graph-warning" role="status" hidden></p>
+        <div class="graph-wrap">
+          <div class="graph-grid" aria-hidden="true"></div>
+          <canvas id="graph-canvas" role="application" tabindex="0" aria-label="Grafo ponderado interactivo en tres dimensiones. Haz clic en un punto para ver su explicación, usa las flechas para cambiar de punto y arrastra para girar."></canvas>
+          <div class="graph-hud"><span class="hud-dot"></span><span id="graph-view-status">Vista 3D activa</span></div>
+          <div class="graph-instruction" aria-hidden="true"><span>↔</span> Arrastra para girar</div>
+        </div>
+        <div class="graph-toolbar">
+          <span class="legend" aria-label="Leyenda del grafo">
+          <span><i class="legend-pending"></i>Sin revisar</span>
+          <span><i></i>Agregada al árbol</span>
+          <span><i class="legend-rejected"></i>Descartada por ciclo</span>
+          </span>
+          <button class="button button-motion" id="toggle-rotation" type="button" aria-pressed="true">Ⅱ Pausar giro</button>
+        </div>
+        <section class="vertex-inspector" aria-labelledby="vertex-inspector-title">
+          <div class="vertex-inspector-heading">
+            <div>
+              <span class="eyebrow">Explora los vértices</span>
+              <h3 id="vertex-inspector-title">¿Qué representa cada punto?</h3>
+            </div>
+            <span class="vertex-hint">Selecciona un punto del grafo</span>
+          </div>
+          <div class="vertex-picker" id="vertex-picker" aria-label="Seleccionar vértice"></div>
+          <div class="vertex-details" id="vertex-details" aria-live="polite">
+            <strong id="vertex-details-title">Elige un vértice</strong>
+            <p id="vertex-details-description">Haz clic en un nodo 3D o en su nombre para conocer sus conexiones, pesos y decisiones de Kruskal.</p>
+            <div class="vertex-links" id="vertex-details-links"></div>
+          </div>
+        </section>
+        <form class="graph-editor" id="graph-form">
+          <span class="eyebrow">Diseña un escenario</span>
+          <h2>Prueba tu propio grafo</h2>
+          <p class="editor-intro">Escribe los vértices separados por comas y una arista por línea con el formato origen, destino, peso.</p>
+          <div class="editor-grid">
+            <div class="field">
+              <label for="vertices-input">Vértices</label>
+              <textarea id="vertices-input" aria-describedby="editor-message" spellcheck="false">A, B, C, D, E</textarea>
+            </div>
+            <div class="field">
+              <label for="edges-input">Aristas y pesos</label>
+              <textarea id="edges-input" aria-describedby="editor-message" spellcheck="false">A, B, 4
+A, C, 2
+B, C, 1
+B, D, 5
+C, D, 8
+C, E, 10
+D, E, 2</textarea>
+            </div>
+          </div>
+          <div class="editor-actions">
+            <button class="button primary" type="submit">Calcular este grafo</button>
+            <button class="button" id="example" type="button">Cargar ejemplo original</button>
+          </div>
+          <p class="editor-message" id="editor-message" role="status" aria-live="polite">El núcleo Python valida y calcula cada grafo; los cambios no modifican archivos.</p>
+        </form>
+      </article>
+
+      <div class="side">
+        <article class="card">
+          <div class="card-heading">
+            <div><span class="eyebrow">Menor peso primero</span><h2>Decisiones del algoritmo</h2></div>
+            <span class="status" id="progress" aria-live="polite">0 de 5</span>
+          </div>
+          <div class="progress-track" id="progress-track" role="progressbar" aria-label="Progreso de decisiones" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+            <span class="progress-fill" id="progress-fill"></span>
+          </div>
+          <div class="step-summary">
+            <span id="component-count">Componentes restantes: 5</span>
+            <span id="tie-count"></span>
+          </div>
+          <div class="steps" id="steps" aria-live="polite"></div>
+          <div class="controls">
+            <button class="button" id="previous" type="button" disabled>← Anterior</button>
+            <button class="button primary" id="next" type="button">Ver primer paso</button>
+            <button class="button" id="show-all" type="button">Ver todo</button>
+            <button class="button" id="reset" type="button">Reiniciar</button>
+          </div>
+        </article>
+
+        <article class="card result" aria-live="polite">
+          <div class="result-top">
+            <div><span class="eyebrow">Resultado</span><h2>Árbol generador mínimo</h2></div>
+            <span class="status" id="result-status">Pendiente</span>
+          </div>
+          <div class="total">
+            <span class="total-label">Peso total del árbol</span>
+            <strong class="total-number" id="total">—</strong>
+          </div>
+          <div class="chips" id="selected-edges"><span class="status">Avanza para construir el árbol</span></div>
+          <section class="step-explanation" aria-live="polite" aria-atomic="true">
+            <span class="eyebrow">¿Cómo se construye?</span>
+            <p id="step-explanation-text">Kruskal ordena las aristas por peso. Avanza para ver por qué cada una se agrega o se descarta.</p>
+          </section>
+          <p class="check" id="check">Se necesitan <strong>n − 1 = 4 aristas</strong> para conectar los 5 vértices sin ciclos.</p>
+        </article>
+
+        <article class="card analysis-card" aria-labelledby="stats-title" aria-live="polite">
+          <span class="eyebrow">Ejecución de Kruskal</span>
+          <h2 id="stats-title">Estadísticas del algoritmo</h2>
+          <div class="stats-grid">
+            <div class="stat-item"><span>Aristas examinadas</span><strong id="stat-examined">—</strong></div>
+            <div class="stat-item"><span>Aristas agregadas</span><strong id="stat-selected">—</strong></div>
+            <div class="stat-item"><span>Aristas descartadas</span><strong id="stat-rejected">—</strong></div>
+            <div class="stat-item"><span>Complejidad temporal</span><strong id="stat-complexity">—</strong></div>
+          </div>
+        </article>
+
+        <article class="card analysis-card" aria-labelledby="prim-title" aria-live="polite">
+          <span class="eyebrow">Comparación de resultados</span>
+          <h2 id="prim-title">Algoritmo de Prim</h2>
+          <span class="status" id="prim-status">Calculando con el mismo grafo</span>
+          <p class="comparison-total">Peso total: <strong id="prim-total">—</strong></p>
+          <div class="chips" id="prim-edges"></div>
+          <p class="comparison-status" id="comparison-status" role="status"></p>
+        </article>
+      </div>
+    </section>
+
+    <section class="explanation" aria-label="Conceptos clave">
+      <article class="info"><strong>1. Ordenar</strong><p>Se consideran las aristas desde el peso más bajo hasta el más alto.</p></article>
+      <article class="info"><strong>2. Evitar ciclos</strong><p>Una arista se agrega solo si conecta componentes que todavía estaban separados.</p></article>
+      <article class="info"><strong>3. Completar</strong><p>El proceso termina al conectar todos los vértices con exactamente n − 1 aristas.</p></article>
+    </section>
+
+    <footer>Visualización educativa del algoritmo de Kruskal · No requiere instalación ni conexión a internet</footer>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
