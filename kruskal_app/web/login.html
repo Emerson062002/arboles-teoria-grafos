@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101829">
+  <title>Iniciar sesión | Laboratorio de grafos</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="login-page">
+    <section class="card login-card">
+      <a class="brand" href="/login">
+        <span class="topline-mark" aria-hidden="true">G</span>
+        <span>Laboratorio de grafos</span>
+      </a>
+      <span class="eyebrow">Historial privado</span>
+      <h1>Iniciar sesión</h1>
+      <p class="login-intro">Ingresa tus credenciales para consultar y guardar tus análisis.</p>
+      <form id="login-form">
+        <label for="username">Usuario</label>
+        <input id="username" name="username" autocomplete="username" required>
+        <label for="password">Contraseña</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button class="button primary" type="submit">Entrar</button>
+        <p id="login-message" class="editor-message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+  <script src="/login.js" defer></script>
+</body>
+</html>

@@ -376,6 +376,14 @@
       iniciarAnimacion();
     });
 
+    document.getElementById("history-refresh").addEventListener("click", () => {
+      void cargarHistorial();
+    });
+    document.getElementById("logout").addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" });
+      window.location.assign("/login");
+    });
+
     canvasGrafo.addEventListener("pointermove", (evento) => {
       if (!arrastrando || !posicionPuntero) return;
       const deltaX = evento.clientX - posicionPuntero.x;
@@ -563,6 +571,73 @@
       dibujarAnalisisEstructural();
     }
 
+    async function cargarHistorial() {
+      const lista = document.getElementById("history-list");
+      const mensaje = document.getElementById("history-message");
+      try {
+        const respuesta = await fetch("/api/history", { cache: "no-store" });
+        if (respuesta.status === 401) {
+          window.location.assign("/login");
+          return;
+        }
+        const resultado = await respuesta.json();
+        if (!respuesta.ok) throw new Error(resultado.error || "No se pudo cargar el historial.");
+        lista.replaceChildren();
+        resultado.history.forEach((record) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "history-item";
+          const heading = document.createElement("strong");
+          heading.textContent = `Análisis #${record.id} · ${record.analysis.kruskal.total_weight} de peso`;
+          const details = document.createElement("span");
+          details.textContent = `${record.vertices.join(", ")} · ${record.vertices.length} vértices · ${new Date(record.created_at).toLocaleString()}`;
+          button.append(heading, details);
+          button.addEventListener("click", () => abrirAnalisisGuardado(record));
+          lista.append(button);
+        });
+        mensaje.textContent = resultado.history.length
+          ? `${resultado.history.length} análisis recientes. Selecciona uno para volver a verlo.`
+          : "Todavía no hay análisis guardados. Calcula un grafo para agregarlo al historial.";
+      } catch (error) {
+        if (error instanceof TypeError) {
+          mensaje.textContent = "No se pudo contactar al servidor para cargar el historial.";
+        } else {
+          mensaje.textContent = error.message;
+        }
+      }
+    }
+
+    function abrirAnalisisGuardado(record) {
+      vertices = [...record.vertices];
+      aristas = record.edges.map(([desde, hasta, peso], indice) => ({
+        desde, hasta, peso, indice
+      }));
+      analisis = record.analysis;
+      pasos = analisis.kruskal.steps;
+      pasoActual = pasos.length;
+      verticeSeleccionado = null;
+      document.getElementById("vertices-input").value = vertices.join(", ");
+      document.getElementById("edges-input").value = aristas
+        .map(({ desde, hasta, peso }) => `${desde}, ${hasta}, ${peso}`).join("\n");
+      dibujarGrafo();
+      dibujarPasos();
+      const aviso = document.getElementById("editor-message");
+      aviso.classList.remove("error");
+      aviso.textContent = `Se abrió el análisis guardado #${record.id}.`;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function actualizarSesion() {
+      try {
+        const response = await fetch("/api/session", { cache: "no-store" });
+        const session = await response.json();
+        document.getElementById("logout").hidden = !session.authentication_required;
+      } catch (error) {
+        document.getElementById("history-message").textContent =
+          error instanceof TypeError ? "No se pudo verificar la sesión." : error.message;
+      }
+    }
+
     function dibujarAnalisisEstructural() {
       if (!analisis) return;
       const cuello = document.getElementById("bottleneck-edges");
@@ -585,7 +660,7 @@
         : '<span class="status">No se encontraron vértices de articulación</span>';
     }
 
-    async function cargarGrafo(nuevosVertices, nuevasAristas, mensaje) {
+    async function cargarGrafo(nuevosVertices, nuevasAristas, mensaje, guardar = true) {
       const aviso = document.getElementById("editor-message");
       aviso.classList.remove("error");
       aviso.textContent = "Calculando el grafo con el núcleo Python…";
@@ -595,12 +670,17 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             vertices: nuevosVertices,
+            save: guardar,
             edges: nuevasAristas.map((arista) =>
               arista.campos ?? [arista.desde, arista.hasta, String(arista.peso)]
             )
           })
         });
         const resultado = await respuesta.json();
+        if (respuesta.status === 401) {
+          window.location.assign("/login");
+          return;
+        }
         if (!respuesta.ok) throw new Error(resultado.error || "No fue posible calcular el grafo.");
         vertices = [...nuevosVertices];
         aristas = nuevasAristas.map((arista, indice) => ({ ...arista, indice }));
@@ -610,6 +690,7 @@
         verticeSeleccionado = null;
         dibujarGrafo();
         dibujarPasos();
+        if (guardar) void cargarHistorial();
         aviso.classList.remove("error");
         aviso.textContent = mensaje;
       } catch (error) {
@@ -675,4 +756,6 @@
     document.getElementById("edges-input").value = aristas
       .map(({ desde, hasta, peso }) => `${desde}, ${hasta}, ${peso}`).join("\n");
     iniciarAnimacion();
-    void cargarGrafo(vertices, aristas, "Grafo listo. Avanza para ver cada decisión.");
+    void cargarGrafo(vertices, aristas, "Grafo listo. Avanza para ver cada decisión.", false);
+    void cargarHistorial();
+    void actualizarSesion();

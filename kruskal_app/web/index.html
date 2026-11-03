@@ -15,7 +15,10 @@
           <span class="topline-mark" aria-hidden="true">G</span>
           <span>Laboratorio de grafos</span>
         </a>
-        <span class="course-label">Matemáticas discretas <span aria-hidden="true">/</span> Teoría de grafos</span>
+        <div class="topline-actions">
+          <span class="course-label">Matemáticas discretas <span aria-hidden="true">/</span> Teoría de grafos</span>
+          <button class="button logout-button" id="logout" type="button" hidden>Cerrar sesión</button>
+        </div>
       </div>
       <div class="hero">
         <div class="hero-copy">
@@ -138,6 +141,18 @@ D, E, 2</textarea>
             <p id="step-explanation-text">Kruskal ordena las aristas por peso. Avanza para ver por qué cada una se agrega o se descarta.</p>
           </section>
           <p class="check" id="check">Se necesitan <strong>n − 1 = 4 aristas</strong> para conectar los 5 vértices sin ciclos.</p>
+        </article>
+
+        <article class="card analysis-card history-card" aria-labelledby="history-title">
+          <div class="history-heading">
+            <div>
+              <span class="eyebrow">Guardados en la base de datos</span>
+              <h2 id="history-title">Mi historial privado</h2>
+            </div>
+            <button class="button history-refresh" id="history-refresh" type="button">Actualizar</button>
+          </div>
+          <p class="history-message" id="history-message" role="status" aria-live="polite">Cargando historial…</p>
+          <div class="history-list" id="history-list"></div>
         </article>
 
         <article class="card analysis-card" aria-labelledby="cuts-title" aria-live="polite">
