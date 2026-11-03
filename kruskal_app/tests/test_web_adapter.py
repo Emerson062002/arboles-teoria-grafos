@@ -259,6 +259,26 @@ class WebAdapterTests(unittest.TestCase):
         self.assertNotIn("analysis_id", result)
         self.assertEqual(len(repository.recent(limit=1000)), count_before)
 
+    def test_database_url_does_not_change_local_sqlite_storage(self):
+        database_path = str(Path(self.temporary_directory.name) / "explicit-local.sqlite3")
+        previous_path = os.environ.get("ANALYSIS_DB_PATH")
+        previous_url = os.environ.get("DATABASE_URL")
+        os.environ["ANALYSIS_DB_PATH"] = database_path
+        os.environ["DATABASE_URL"] = "postgresql://unused.invalid/example"
+        try:
+            repository = AnalysisRepository.from_environment()
+            self.assertEqual(repository.database_path, Path(database_path))
+            self.assertEqual(repository.recent(), [])
+        finally:
+            if previous_path is None:
+                os.environ.pop("ANALYSIS_DB_PATH", None)
+            else:
+                os.environ["ANALYSIS_DB_PATH"] = previous_path
+            if previous_url is None:
+                os.environ.pop("DATABASE_URL", None)
+            else:
+                os.environ["DATABASE_URL"] = previous_url
+
 
 if __name__ == "__main__":
     unittest.main()

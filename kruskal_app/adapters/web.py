@@ -274,7 +274,7 @@ class GraphRequestHandler(BaseHTTPRequestHandler):
 
 
 def serve(host="127.0.0.1", port=8000):
-    AuthSettings.from_environment(validate=True)
+    AuthSettings.from_environment()
     GraphRequestHandler.repository = AnalysisRepository.from_environment()
     server = ThreadingHTTPServer((host, port), GraphRequestHandler)
     print(f"Interfaz disponible en http://{host}:{server.server_port}")

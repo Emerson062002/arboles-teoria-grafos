@@ -22,33 +22,27 @@ class AuthSettings:
     secure_cookie: bool
 
     @classmethod
-    def from_environment(cls, validate=False):
+    def from_environment(cls):
         username = os.environ.get("APP_USERNAME", "")
         password = os.environ.get("APP_PASSWORD", "")
         secret_text = os.environ.get("APP_SESSION_SECRET", "")
-        production = os.environ.get("APP_ENV") == "production"
-        deployment = production or bool(os.environ.get("PORT"))
         enabled = bool(username or password or secret_text)
 
         if enabled and (not username or not password or not secret_text):
             raise RuntimeError(
                 "Configura APP_USERNAME, APP_PASSWORD y APP_SESSION_SECRET juntos."
             )
-        if deployment and not enabled:
-            raise RuntimeError("El despliegue privado requiere credenciales de acceso.")
         if enabled and len(secret_text.encode("utf-8")) < 32:
             raise RuntimeError("APP_SESSION_SECRET debe tener al menos 32 bytes.")
         if enabled and len(password) < 12:
             raise RuntimeError("APP_PASSWORD debe tener al menos 12 caracteres.")
-        if validate and deployment and not os.environ.get("DATABASE_URL"):
-            raise RuntimeError("El despliegue requiere una base de datos PostgreSQL.")
 
         return cls(
             username=username,
             password=password,
             secret=secret_text.encode("utf-8"),
             enabled=enabled,
-            secure_cookie=deployment,
+            secure_cookie=False,
         )
 
     def authenticate(self, username, password):

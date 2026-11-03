@@ -2,7 +2,7 @@
 
 Este proyecto calcula árboles generadores mínimos de grafos ponderados con Kruskal y Prim. La consola muestra las decisiones de Kruskal y compara ambos resultados; la página web visualiza las aristas, explica cada paso y permite ingresar grafos propios.
 
-El núcleo de dominio Python es compartido por la consola y la página web mediante un servidor local. El modo local usa SQLite y no requiere paquetes externos ni conexión a internet; Render instala el controlador de PostgreSQL para guardar el historial persistente.
+El núcleo de dominio Python es compartido por la consola y la página web mediante un servidor local. Usa SQLite, incluida con Python, y no requiere paquetes externos ni conexión a internet.
 
 La fuente de verdad de ambos algoritmos está en Python. El JavaScript solo solicita análisis al servidor y actualiza la visualización y los controles.
 
@@ -106,9 +106,9 @@ py -m kruskal_app.adapters.web
 
 Luego abre en el navegador la dirección que aparece (por defecto `http://127.0.0.1:8000`). Detén el servidor con `Ctrl+C`. Si el comando `py` no está disponible, reemplázalo por `python`.
 
-### Permitir acceso desde otra computadora de la misma red
+### Acceso desde otra computadora de la misma red
 
-De forma predeterminada, el servidor solo acepta conexiones desde esta PC. Para que otros equipos conectados a la misma red local puedan abrirlo, inicia el servidor escuchando en todas las interfaces:
+Por defecto, el servidor solo acepta conexiones desde esta PC. Si quieres usarlo desde otro dispositivo conectado a la misma red, puedes iniciarlo escuchando en todas las interfaces:
 
 ```powershell
 py -m kruskal_app.adapters.web --host 0.0.0.0 --port 8000
@@ -116,15 +116,13 @@ py -m kruskal_app.adapters.web --host 0.0.0.0 --port 8000
 
 En la PC que ejecuta el servidor, consulta su dirección IPv4 con `ipconfig` y busca el adaptador de red que comparte con la otra computadora. Desde el otro equipo, abre `http://DIRECCION-IP:8000`, reemplazando `DIRECCION-IP` por esa dirección (por ejemplo, `http://192.168.1.25:8000`). Ambos equipos deben estar en la misma red y, si Windows muestra un aviso del firewall, permite Python solo en redes privadas. Si el puerto 8000 ya está ocupado, elige otro, como `8003`, tanto al iniciar como al abrir la dirección.
 
-Esta modalidad es para una red local confiable; no configures el router para publicar el puerto en internet. Para compartir la web fuera de tu red se necesita desplegarla en un servidor con medidas de seguridad adecuadas.
+Esta modalidad es para una red local confiable. No configures el router para publicar el puerto en internet.
 
-### Publicar en internet con Render
+### Historial local y copias de seguridad
 
-El archivo `render.yaml` configura el servicio web y una base de datos PostgreSQL persistente para Render. Sube el código a un repositorio de GitHub y, en Render, crea o actualiza el **Blueprint** desde ese repositorio. La base está configurada en un plan de pago para que el historial no sea una base gratuita temporal. El costo depende del plan actual de Render. Mantén activo el recurso y configura copias de seguridad en Render; no elimines ni recrees la base si quieres conservar los datos.
+Cada vez que pulses **Calcular este grafo**, se guardan los vértices, las aristas y sus resultados en `.data/analyses.sqlite3`, dentro de la carpeta del proyecto. El historial aparece en **Mi historial privado** y puedes seleccionar un análisis para volver a abrirlo. No se usa un servidor remoto ni tiene costo de alojamiento.
 
-Al crear el Blueprint, Render solicitará `APP_USERNAME` y `APP_PASSWORD`. Define un usuario y una contraseña de al menos 12 caracteres; guarda esas credenciales en los secretos de Render, no en GitHub. Render generará `APP_SESSION_SECRET` y conectará `DATABASE_URL` a PostgreSQL. El servicio falla al iniciar en producción si faltan las credenciales o la base de datos, en lugar de dejar público el historial.
-
-Cada vez que pulses **Calcular este grafo**, se guardarán los vértices, las aristas y el resultado. En **Mi historial privado** puedes seleccionar un análisis reciente para volverlo a abrir. El acceso a la página y al historial requiere iniciar sesión. El enlace público de Render te permitirá consultarlo desde otros dispositivos. En ejecución local, la base se guarda en `.data/analyses.sqlite3`; la autenticación no está activada por defecto, así que conserva el servidor local en `127.0.0.1` y no lo expongas a internet.
+Para conservar el historial ante daños o pérdida del equipo, cierra la aplicación y copia `.data/analyses.sqlite3` a una memoria USB o a una carpeta de respaldo. Para restaurarlo, coloca la copia de vuelta en `.data` con el mismo nombre. Mantén una copia de seguridad: los datos locales no se sincronizan automáticamente entre computadoras.
 
 ## Ejecutar en macOS o Linux
 
@@ -204,19 +202,18 @@ kruskal_app/
 │   ├── console.py     # Adaptador de consola
 │   ├── web.py         # Servidor HTTP y autenticación
 │   ├── auth.py        # Sesiones privadas
-│   └── analysis_repository.py # Historial SQLite/PostgreSQL
+│   └── analysis_repository.py # Historial local SQLite
 ├── tests/             # Pruebas del dominio y adaptador HTTP
 └── web/
     ├── index.html     # Estructura de la interfaz
-    ├── login.html     # Acceso privado en Render
+    ├── login.html     # Inicio de sesión opcional
     ├── style.css      # Presentación
     ├── app.js         # Peticiones HTTP, historial y controles visuales
     └── login.js       # Inicio de sesión
 index.py               # Punto de entrada de consola
-render.yaml            # Servicio web y PostgreSQL persistente
 ```
 
-El dominio solo importa módulos del propio dominio o de la biblioteca estándar; no depende de `application` ni de los adaptadores. La consola y el servidor llaman al caso de uso `AnalyzeGraph`. La página web envía los datos mediante `POST /api/analyze`; el servidor valida el JSON, calcula y guarda el análisis. El endpoint privado `GET /api/history` entrega los análisis guardados al usuario autenticado. SQLite se usa en local y PostgreSQL en Render.
+El dominio solo importa módulos del propio dominio o de la biblioteca estándar; no depende de `application` ni de los adaptadores. La consola y el servidor llaman al caso de uso `AnalyzeGraph`. La página web envía los datos mediante `POST /api/analyze`; el servidor valida el JSON, calcula y guarda el análisis en SQLite local. El historial se consulta desde la misma computadora.
 
 ## Conclusión
 
