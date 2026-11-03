@@ -1,7 +1,7 @@
 """Resultados inmutables de los algoritmos de árbol generador mínimo."""
 
 from dataclasses import dataclass
-from typing import Dict, List, Sequence, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 from .grafo import Arista
 
@@ -31,10 +31,19 @@ class Resultado:
 
 
 @dataclass(frozen=True)
+class Cortaduras:
+    puentes: List[Arista]
+    vertices_articulacion: List[str]
+
+
+@dataclass(frozen=True)
 class Comparacion:
     kruskal: Resultado
     prim: Resultado
     pesos_iguales: bool
+    cuello_botella: List[Arista]
+    peso_cuello_botella: Optional[Union[int, float]]
+    cortaduras: Cortaduras
 
 
 def crear_resultado(vertices, edges: Sequence[Arista], steps: Sequence[Paso],

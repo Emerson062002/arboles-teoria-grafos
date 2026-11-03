@@ -43,6 +43,12 @@ El grafo de ejemplo tiene cinco vértices (A, B, C, D, E) y estas aristas: AB = 
 - **Vértices aislados:** Python permite indicarlos al llamar `kruskal(aristas, vertices)`, aunque no aparezcan en ninguna arista.
 - **Entradas inválidas:** la función rechaza vértices repetidos, extremos no declarados, lazos, aristas duplicadas y pesos no finitos.
 
+## Cuello de botella y cortaduras
+
+El análisis también identifica el **cuello de botella** del árbol generador mínimo: la arista (o las aristas empatadas) de mayor peso que Kruskal selecciona. Para un bosque mínimo desconectado, muestra las aristas de mayor peso entre las seleccionadas; si no se seleccionan aristas, no hay cuello de botella.
+
+Además, detecta **puentes** (aristas cuya eliminación aumenta el número de componentes conexas) y **vértices de articulación** (vértices cuya eliminación desconecta su componente). El análisis funciona también con grafos desconectados y vértices aislados, en tiempo `O(V + E)`.
+
 ## Conexión con la teoría
 
 | Concepto de la materia | Dónde aparece en el proyecto |
@@ -51,12 +57,14 @@ El grafo de ejemplo tiene cinco vértices (A, B, C, D, E) y estas aristas: AB = 
 | Un árbol de `n` vértices tiene `n - 1` aristas | El criterio para detener el algoritmo |
 | Árbol generador mínimo | Lo que calcula Kruskal |
 | Ciclo | La razón por la que se descarta una arista |
+| Puente y vértice de articulación | El análisis de cortaduras identifica conexiones y puntos críticos del grafo |
+| Cuello de botella | La arista más pesada seleccionada en el árbol mínimo |
 
 ## Abrir la página visual
 
 Inicia el servidor local con Python desde la carpeta del proyecto y abre la dirección indicada en el navegador. La página ya no se abre directamente como archivo: solicita los cálculos al núcleo Python para que la consola y la web usen la misma lógica. No necesitas instalar paquetes ni tener conexión a internet. El grafo se muestra en un lienzo 3D con perspectiva y profundidad: gira suavemente, se puede rotar arrastrando con el mouse o el dedo, y el botón **Pausar giro** permite detener el movimiento. La preferencia del navegador para reducir movimiento se respeta. Selecciona un vértice haciendo clic en el punto o en su nombre: el panel explica cuántas conexiones tiene, sus vecinos y pesos, y si cada arista está pendiente, incluida en el árbol, descartada por cerrar un ciclo o no fue necesaria para terminar Kruskal. También puedes enfocar el lienzo y usar las flechas del teclado para recorrer los vértices.
 
-Pulsa **Ver primer paso** y luego **Ver siguiente paso** para observar cómo se construye el árbol; usa **Anterior** para regresar una decisión o **Ver todo** para completar el recorrido. **Reiniciar** vuelve al inicio del grafo actual y **Cargar ejemplo original** restaura el ejemplo de cinco vértices. La página muestra explicaciones, estadísticas de Kruskal y una comparación de peso y aristas con Prim. Si el grafo es desconectado, ambos algoritmos calculan un bosque mínimo.
+Pulsa **Ver primer paso** y luego **Ver siguiente paso** para observar cómo se construye el árbol; usa **Anterior** para regresar una decisión o **Ver todo** para completar el recorrido. **Reiniciar** vuelve al inicio del grafo actual y **Cargar ejemplo original** restaura el ejemplo de cinco vértices. La página muestra explicaciones, estadísticas de Kruskal, la arista cuello de botella, las cortaduras y una comparación de peso y aristas con Prim. Si el grafo es desconectado, ambos algoritmos calculan un bosque mínimo.
 
 ### Ingresar otro grafo
 
@@ -158,7 +166,7 @@ Ejecuta las pruebas desde la carpeta del proyecto:
 py -m unittest
 ```
 
-También puedes usar `python -m unittest` si no tienes disponible el comando `py`. Se prueban el ejemplo, empates, decimales, pesos negativos, grafos desconectados, vértices aislados, entradas inválidas, la comparación de algoritmos y el adaptador HTTP.
+También puedes usar `python -m unittest` si no tienes disponible el comando `py`. Se prueban el ejemplo, empates, decimales, pesos negativos, grafos desconectados, vértices aislados, cortaduras, detección en grafos grandes, entradas inválidas, la comparación de algoritmos y el adaptador HTTP.
 
 ## Resultado esperado
 
@@ -180,6 +188,7 @@ Cambia esa lista para probar otro grafo en la consola. En la web puedes ingresar
 kruskal_app/
 ├── domain/
 │   ├── grafo.py       # Modelo y validación del grafo
+│   ├── cortaduras.py  # Puentes y vértices de articulación
 │   ├── union_find.py  # Componentes disjuntos
 │   ├── kruskal.py     # Kruskal y pasos
 │   ├── prim.py        # Prim y bosque mínimo

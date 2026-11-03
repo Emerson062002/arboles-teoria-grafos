@@ -66,6 +66,23 @@ def main(analyzer: Optional[AnalyzeGraphPort] = None, argv=None):
         print(f"{step.desde}{step.hasta:<6}{step.peso:<8}{step.detalle}")
     display_result("Resultado de Kruskal", analysis.kruskal)
     display_result("Comparación con Prim", analysis.prim)
+    print("\nCuello de botella y cortaduras")
+    if analysis.peso_cuello_botella is None:
+        print("Cuello de botella: no hay aristas seleccionadas.")
+    else:
+        bottlenecks = ", ".join(
+            f"{edge.desde}{edge.hasta} ({edge.peso})"
+            for edge in analysis.cuello_botella
+        )
+        print(f"Cuello de botella (peso {analysis.peso_cuello_botella}): {bottlenecks}")
+    bridges = ", ".join(
+        f"{edge.desde}{edge.hasta}" for edge in analysis.cortaduras.puentes
+    ) or "ninguno"
+    articulation_vertices = ", ".join(
+        analysis.cortaduras.vertices_articulacion
+    ) or "ninguno"
+    print(f"Puentes: {bridges}")
+    print(f"Vértices de articulación: {articulation_vertices}")
 
 
 if __name__ == "__main__":

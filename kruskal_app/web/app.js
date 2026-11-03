@@ -37,6 +37,10 @@
       })[caracter]);
     }
 
+    function claveArista(arista) {
+      return JSON.stringify([arista.desde, arista.hasta].sort());
+    }
+
     function dibujarGrafo() {
       const advertencia = document.getElementById("graph-warning");
       const grafoGrande = vertices.length > 12 || aristas.length > 24;
@@ -195,16 +199,25 @@
       pasos.slice(0, pasoActual).forEach((paso) => {
         edgeStates.set(paso.indice, paso.agrega ? "selected" : "rejected");
       });
+      const puentes = new Set((analisis?.cortaduras?.puentes ?? []).map(claveArista));
+      const cuelloBotella = new Set((analisis?.cuello_botella ?? []).map(claveArista));
       const drawEdges = aristas.map((edge, index) => {
         const from = posiciones.get(edge.desde);
         const to = posiciones.get(edge.hasta);
-        return { edge, index, from, to, depth: (from.z + to.z) / 2 };
+        const key = claveArista(edge);
+        return {
+          edge, index, from, to, depth: (from.z + to.z) / 2,
+          isBridge: puentes.has(key), isBottleneck: cuelloBotella.has(key)
+        };
       }).sort((a, b) => a.depth - b.depth);
 
       contextoGrafo.save();
       contextoGrafo.lineCap = "round";
       for (const item of drawEdges) {
         const state = edgeStates.get(item.index);
+        const structuralColor = item.isBottleneck
+          ? "#b9aaff"
+          : item.isBridge ? "#ffc878" : null;
         const conectaSeleccionado = verticeSeleccionado !== null &&
           (item.edge.desde === verticeSeleccionado || item.edge.hasta === verticeSeleccionado);
         const depthOpacity = 0.3 + ((item.depth + 1) / 2) * 0.5;
@@ -212,18 +225,28 @@
         contextoGrafo.moveTo(item.from.x, item.from.y);
         contextoGrafo.lineTo(item.to.x, item.to.y);
         contextoGrafo.setLineDash(state === "rejected" ? [7, 7] : []);
-        contextoGrafo.strokeStyle = conectaSeleccionado
-          ? `rgba(125, 169, 255, ${Math.min(1, depthOpacity + 0.25)})`
-          : state === "selected"
-          ? `rgba(115, 240, 207, ${depthOpacity})`
-          : state === "rejected"
-            ? `rgba(255, 130, 155, ${depthOpacity})`
-            : `rgba(139, 159, 191, ${depthOpacity * 0.62})`;
-        contextoGrafo.lineWidth = conectaSeleccionado ? 3.8 : state === "selected" ? 3.4 : 1.65;
+        if (conectaSeleccionado) {
+          contextoGrafo.strokeStyle = `rgba(125, 169, 255, ${Math.min(1, depthOpacity + 0.25)})`;
+        } else if (structuralColor) {
+          contextoGrafo.strokeStyle = structuralColor;
+        } else if (state === "selected") {
+          contextoGrafo.strokeStyle = `rgba(115, 240, 207, ${depthOpacity})`;
+        } else if (state === "rejected") {
+          contextoGrafo.strokeStyle = `rgba(255, 130, 155, ${depthOpacity})`;
+        } else {
+          contextoGrafo.strokeStyle = `rgba(139, 159, 191, ${depthOpacity * 0.62})`;
+        }
+        contextoGrafo.lineWidth = conectaSeleccionado || structuralColor
+          ? 3.4 : state === "selected" ? 3.4 : 1.65;
         contextoGrafo.shadowColor = conectaSeleccionado
           ? "rgba(125, 169, 255, .8)"
-          : state === "selected" ? "rgba(91, 246, 209, .8)" : "transparent";
-        contextoGrafo.shadowBlur = conectaSeleccionado ? 13 : state === "selected" ? 13 : 0;
+          : item.isBottleneck
+            ? "rgba(185, 170, 255, .78)"
+            : item.isBridge
+              ? "rgba(255, 200, 120, .72)"
+              : state === "selected" ? "rgba(91, 246, 209, .8)" : "transparent";
+        contextoGrafo.shadowBlur = conectaSeleccionado || structuralColor
+          ? 13 : state === "selected" ? 13 : 0;
         contextoGrafo.stroke();
         contextoGrafo.setLineDash([]);
         contextoGrafo.shadowBlur = 0;
@@ -237,19 +260,33 @@
         const label = String(item.edge.peso);
         contextoGrafo.font = "700 11px Inter, system-ui, sans-serif";
         const pillWidth = Math.max(29, contextoGrafo.measureText(label).width + 13);
-        contextoGrafo.fillStyle = state === "selected"
-          ? "rgba(19, 62, 59, .94)"
-          : state === "rejected" ? "rgba(73, 37, 55, .94)" : "rgba(30, 44, 66, .92)";
+        if (item.isBottleneck) {
+          contextoGrafo.fillStyle = "rgba(58, 48, 91, .96)";
+        } else if (item.isBridge) {
+          contextoGrafo.fillStyle = "rgba(76, 57, 34, .96)";
+        } else if (state === "selected") {
+          contextoGrafo.fillStyle = "rgba(19, 62, 59, .94)";
+        } else if (state === "rejected") {
+          contextoGrafo.fillStyle = "rgba(73, 37, 55, .94)";
+        } else {
+          contextoGrafo.fillStyle = "rgba(30, 44, 66, .92)";
+        }
         contextoGrafo.strokeStyle = state === "selected"
           ? "rgba(115, 240, 207, .62)"
-          : state === "rejected" ? "rgba(255, 130, 155, .48)" : "rgba(173, 194, 224, .2)";
+          : item.isBottleneck
+            ? "rgba(185, 170, 255, .72)"
+            : item.isBridge
+              ? "rgba(255, 200, 120, .65)"
+              : state === "rejected" ? "rgba(255, 130, 155, .48)" : "rgba(173, 194, 224, .2)";
         contextoGrafo.lineWidth = 1;
         contextoGrafo.beginPath();
         contextoGrafo.roundRect(midX - pillWidth / 2, midY - 10, pillWidth, 20, 7);
         contextoGrafo.fill();
         contextoGrafo.stroke();
-        contextoGrafo.fillStyle = state === "selected"
-          ? "#8ff5d7" : state === "rejected" ? "#ff9aae" : "#d9e3f2";
+        contextoGrafo.fillStyle = item.isBottleneck
+          ? "#c8bcff"
+          : item.isBridge ? "#ffd79c"
+            : state === "selected" ? "#8ff5d7" : state === "rejected" ? "#ff9aae" : "#d9e3f2";
         contextoGrafo.textAlign = "center";
         contextoGrafo.textBaseline = "middle";
         contextoGrafo.fillText(label, midX, midY + 0.5);
@@ -523,6 +560,29 @@
         ? "Coincidencia: Kruskal y Prim encuentran el mismo peso mínimo."
         : "Atención: los algoritmos produjeron pesos distintos.";
       mensaje.classList.toggle("match", analisis.pesos_iguales);
+      dibujarAnalisisEstructural();
+    }
+
+    function dibujarAnalisisEstructural() {
+      if (!analisis) return;
+      const cuello = document.getElementById("bottleneck-edges");
+      cuello.innerHTML = analisis.cuello_botella.length
+        ? analisis.cuello_botella.map((edge) =>
+          `<span class="chip bottleneck-chip">${escaparHtml(edge.desde)}–${escaparHtml(edge.hasta)} · peso ${edge.peso}</span>`
+        ).join("")
+        : '<span class="status">No hay aristas en el árbol mínimo</span>';
+      const puentes = document.getElementById("bridge-edges");
+      puentes.innerHTML = analisis.cortaduras.puentes.length
+        ? analisis.cortaduras.puentes.map((edge) =>
+          `<span class="chip bridge-chip">${escaparHtml(edge.desde)}–${escaparHtml(edge.hasta)} · peso ${edge.peso}</span>`
+        ).join("")
+        : '<span class="status">No se encontraron puentes</span>';
+      const articulaciones = document.getElementById("articulation-vertices");
+      articulaciones.innerHTML = analisis.cortaduras.vertices_articulacion.length
+        ? analisis.cortaduras.vertices_articulacion.map((vertex) =>
+          `<span class="chip articulation-chip">${escaparHtml(vertex)}</span>`
+        ).join("")
+        : '<span class="status">No se encontraron vértices de articulación</span>';
     }
 
     async function cargarGrafo(nuevosVertices, nuevasAristas, mensaje) {

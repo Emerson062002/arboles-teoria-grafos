@@ -53,6 +53,8 @@
           <span><i class="legend-pending"></i>Sin revisar</span>
           <span><i></i>Agregada al árbol</span>
           <span><i class="legend-rejected"></i>Descartada por ciclo</span>
+          <span><i class="legend-bottleneck"></i>Cuello de botella</span>
+          <span><i class="legend-bridge"></i>Puente (cortadura)</span>
           </span>
           <button class="button button-motion" id="toggle-rotation" type="button" aria-pressed="true">Ⅱ Pausar giro</button>
         </div>
@@ -136,6 +138,28 @@ D, E, 2</textarea>
             <p id="step-explanation-text">Kruskal ordena las aristas por peso. Avanza para ver por qué cada una se agrega o se descarta.</p>
           </section>
           <p class="check" id="check">Se necesitan <strong>n − 1 = 4 aristas</strong> para conectar los 5 vértices sin ciclos.</p>
+        </article>
+
+        <article class="card analysis-card" aria-labelledby="cuts-title" aria-live="polite">
+          <span class="eyebrow">Conexiones críticas</span>
+          <h2 id="cuts-title">Cuello de botella y cortaduras</h2>
+          <div class="critical-analysis">
+            <section>
+              <h3>Cuello de botella</h3>
+              <p class="critical-description">Arista(s) de mayor peso del árbol o bosque mínimo.</p>
+              <div class="chips" id="bottleneck-edges"><span class="status">Calculando…</span></div>
+            </section>
+            <section>
+              <h3>Puentes</h3>
+              <p class="critical-description">Aristas cuya eliminación aumenta las componentes conexas.</p>
+              <div class="chips" id="bridge-edges"></div>
+            </section>
+            <section>
+              <h3>Vértices de articulación</h3>
+              <p class="critical-description">Vértices cuya eliminación desconecta su componente.</p>
+              <div class="chips" id="articulation-vertices"></div>
+            </section>
+          </div>
         </article>
 
         <article class="card analysis-card" aria-labelledby="stats-title" aria-live="polite">

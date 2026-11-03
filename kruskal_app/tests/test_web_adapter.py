@@ -39,7 +39,7 @@ class WebAdapterTests(unittest.TestCase):
             f"{self.base_url}/api/analyze",
             data=json.dumps({
                 "vertices": ["A", "B", "C"],
-                "edges": [["A", "B", 1], ["B", "C", 2], ["A", "C", 5]],
+                "edges": [["A", "B", 1], ["B", "C", 2]],
             }).encode("utf-8"),
             headers={"Content-Type": "application/json"},
             method="POST",
@@ -51,6 +51,12 @@ class WebAdapterTests(unittest.TestCase):
         self.assertEqual(result["kruskal"]["total_weight"], 3)
         self.assertEqual(result["prim"]["total_weight"], 3)
         self.assertEqual(result["kruskal"]["stats"]["edges_examined"], 2)
+        self.assertEqual(result["peso_cuello_botella"], 2)
+        self.assertEqual(
+            [(edge["desde"], edge["hasta"]) for edge in result["cortaduras"]["puentes"]],
+            [("A", "B"), ("B", "C")],
+        )
+        self.assertEqual(result["cortaduras"]["vertices_articulacion"], ["B"])
 
     def test_post_returns_a_clear_error_for_invalid_graphs(self):
         request = Request(

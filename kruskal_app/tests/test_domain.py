@@ -4,6 +4,7 @@ import unittest
 
 from index import es_conexo, kruskal
 from kruskal_app.application.use_cases import AnalyzeGraph
+from kruskal_app.domain.cortaduras import detectar_cortaduras
 from kruskal_app.domain.grafo import Grafo
 from kruskal_app.domain.kruskal import kruskal as domain_kruskal
 from kruskal_app.domain.prim import prim
@@ -140,6 +141,65 @@ class KruskalTests(unittest.TestCase):
         self.assertEqual(result.edges, [])
         self.assertEqual(result.total_weight, 0)
         self.assertTrue(result.connected)
+
+    def test_detects_bridges_and_articulation_vertices_without_flagging_cycles(self):
+        graph = Grafo.crear([
+            ("A", "B", 1), ("B", "C", 2), ("C", "A", 3),
+            ("C", "D", 4), ("D", "E", 5),
+        ])
+
+        result = detectar_cortaduras(graph)
+
+        self.assertEqual(
+            [(edge.desde, edge.hasta) for edge in result.puentes],
+            [("C", "D"), ("D", "E")],
+        )
+        self.assertEqual(result.vertices_articulacion, ["C", "D"])
+
+    def test_cut_detection_handles_disconnected_graphs_and_isolated_vertices(self):
+        graph = Grafo.crear(
+            [("A", "B", 1), ("C", "D", 2), ("D", "E", 3)],
+            ["A", "B", "C", "D", "E", "solo"],
+        )
+
+        result = detectar_cortaduras(graph)
+
+        self.assertEqual(len(result.puentes), 3)
+        self.assertEqual(result.vertices_articulacion, ["D"])
+
+    def test_cut_detection_does_not_depend_on_python_recursion_depth(self):
+        vertices = [str(index) for index in range(1500)]
+        edges = [(vertices[index], vertices[index + 1], 1) for index in range(1499)]
+
+        result = detectar_cortaduras(Grafo.crear(edges, vertices))
+
+        self.assertEqual(len(result.puentes), 1499)
+        self.assertEqual(len(result.vertices_articulacion), 1498)
+
+    def test_analysis_reports_all_maximum_weight_edges_of_the_minimum_tree(self):
+        analysis = AnalyzeGraph().execute(
+            [
+                ("A", "B", 1), ("B", "C", 5), ("C", "D", 5),
+                ("D", "E", 5), ("A", "D", 9),
+            ],
+            list("ABCDE"),
+        )
+
+        self.assertEqual(analysis.peso_cuello_botella, 5)
+        self.assertEqual(
+            [(edge.desde, edge.hasta) for edge in analysis.cuello_botella],
+            [("B", "C"), ("C", "D"), ("D", "E")],
+        )
+        self.assertEqual(
+            [(edge.desde, edge.hasta) for edge in analysis.cortaduras.puentes],
+            [("D", "E")],
+        )
+
+    def test_analysis_has_no_bottleneck_for_graph_without_edges(self):
+        analysis = AnalyzeGraph().execute([], ["A"])
+
+        self.assertIsNone(analysis.peso_cuello_botella)
+        self.assertEqual(analysis.cuello_botella, [])
 
 
 if __name__ == "__main__":

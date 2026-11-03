@@ -177,6 +177,8 @@
     .legend i { width: 17px; height: 3px; border-radius: 4px; background: var(--accent); }
     .legend .legend-rejected { background: #e98491; }
     .legend .legend-pending { background: #60718a; }
+    .legend .legend-bottleneck { background: #b9aaff; }
+    .legend .legend-bridge { background: #ffc878; }
 
     .graph-editor {
       padding: 17px 21px 19px;
@@ -558,6 +560,14 @@
     .stat-item { border-radius: 12px; border-color: rgba(180, 203, 231, .1); background: rgba(255, 255, 255, .025); }
     .comparison-total strong { color: #a99aff; }
     .comparison-status.match { color: #86edcf; }
+    .critical-analysis { display: grid; gap: 14px; }
+    .critical-analysis section { padding-bottom: 12px; border-bottom: 1px solid rgba(180, 203, 231, .09); }
+    .critical-analysis section:last-child { padding-bottom: 0; border-bottom: 0; }
+    .critical-analysis h3 { margin: 0; color: #e6eaff; font-size: .82rem; }
+    .critical-description { margin: 3px 0 9px; color: var(--muted); font-size: .73rem; }
+    .bottleneck-chip { border-color: rgba(185, 170, 255, .35); background: rgba(156, 140, 255, .09); color: #d3caff; }
+    .bridge-chip { border-color: rgba(255, 200, 120, .35); background: rgba(255, 200, 120, .08); color: #ffdda9; }
+    .articulation-chip { border-color: rgba(255, 200, 120, .24); background: rgba(255, 200, 120, .05); color: #ffdda9; }
     .explanation { gap: 15px; margin: 25px 0 43px; }
     .info { border-radius: 16px; border-color: rgba(180, 203, 231, .11); background: linear-gradient(145deg, rgba(24, 37, 58, .78), rgba(17, 27, 44, .74)); }
     .info:hover { border-color: rgba(156, 140, 255, .32); }
